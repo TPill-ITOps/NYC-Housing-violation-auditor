@@ -1,0 +1,39 @@
+import urllib.request
+import urllib.parse
+import json
+
+def run_apartment_audit(b_num, s_name):
+    # NYC Open Data API for Housing Violations
+    base_url = "https://data.cityofnewyork.us/resource/wvza-8vq9.json"
+    
+    # Cleaning the data and building the search query
+    street_clean = s_name.upper().strip()
+    params = {
+        'housenumber': b_num,
+        'streetname': street_clean,
+        '$limit': 5
+    }
+    query_string = urllib.parse.urlencode(params)
+    full_url = f"{base_url}?{query_string}"
+
+    print(f"\n--- STARTING LIVE AUDIT: {b_num} {street_clean} ---")
+    
+    try:
+        with urllib.request.urlopen(full_url) as response:
+            data = json.loads(response.read().decode())
+
+            if not data:
+                print("RESULT: Clean Record. No active violations found!")
+            else:
+                print(f"RESULT: Found {len(data)} violations.")
+                for v in data:
+                    # Class A = Minor, B = Hazardous, C = Emergency
+                    print(f"- [{v.get('class')}] {v.get('novdescription')[:60]}...")
+                    
+    except Exception as e:
+        print(f"Connection Error: {e}")
+
+if __name__ == "__main__":
+    val1 = input("Enter Building Number: ")
+    val2 = input("Enter Street Name: ")
+    run_apartment_audit(val1, val2)
